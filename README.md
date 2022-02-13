@@ -20,6 +20,8 @@ Both 32-bit and 64-bit Windows binaries of this library can be obtained [here](h
 with Microsoft's Visual C++ compiler and the others, since MinGW uses the same format for
 C libraries.
 
+If you want you can compile the library yourself, just use the `makefile` provided in the `c` subdirectory.
+
 
 # A C++ version
 

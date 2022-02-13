@@ -4,3 +4,5 @@
 /notes.yaml
 .vscode
 obj*
+bin*
+*.zip
