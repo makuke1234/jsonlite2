@@ -1,6 +1,8 @@
+export CPLUS_INCLUDE_PATH=include
+
 CXX=g++
 
-CDEFFLAGS=-std=c++11 -Wall -Wextra -Wpedantic
+CDEFFLAGS=-std=c++20 -Wall -Wextra -Wpedantic
 CFLAGS=-O3 -Wl,--strip-all,--build-id=none,--gc-sections -fno-ident
 CDFLAGS=-g -O0
 

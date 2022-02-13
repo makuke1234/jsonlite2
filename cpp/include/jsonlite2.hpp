@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <sstream>
+#include <memory>
+#include <stdexcept>
 
 #include <cstdint>
 #include <cstring>
@@ -81,32 +82,12 @@ namespace jsonlite2
 		"No digits after decimal point!",
 	};
 
-	class jsonValue;
 	class jsonKeyValue;
+	class jsonArray;
 	class jsonObject;
-	
-
-	class jsonArray
-	{
-	private:
-		friend class jsonValue;
-		friend class jsonKeyValue;
-		friend class jsonObject;
-
-		std::vector<jsonValue> m_vals;
-
-		static inline jsonArray p_parse(const char * & it, const char * end);
-		std::string p_dump(std::size_t depth) const;
-
-	public:
-		std::string dump() const
-		{
-			return this->p_dump(0);
-		}
-
-	};
 
 	class json;
+
 
 	class jsonValue
 	{
@@ -142,9 +123,6 @@ namespace jsonlite2
 
 	public:
 		jsonValue() noexcept = default;
-		jsonValue(nullptr_t) noexcept
-		{
-		}
 		jsonValue(std::string * str) noexcept
 			: m_type(type::string)
 		{
@@ -165,119 +143,22 @@ namespace jsonlite2
 		{
 			this->m_d.number = number;
 		}
-		jsonValue(jsonArray * arr) noexcept
-			: m_type(type::array)
-		{
-			this->m_d.array = arr;
-		}
-		jsonValue(const jsonArray & arr)
-			: m_type(type::array)
-		{
-			this->m_d.array = new jsonArray(arr);
-		}
-		jsonValue(jsonObject * obj) noexcept
-			: m_type(type::object)
-		{
-			this->m_d.object = obj;
-		}
-		jsonValue(const jsonObject & obj)
-			: m_type(type::object)
-		{
-			this->m_d.object = new jsonObject(obj);
-		}
+		jsonValue(jsonArray * arr) noexcept;
+		jsonValue(const jsonArray & arr);
+		jsonValue(jsonObject * obj) noexcept;
+		jsonValue(const jsonObject & obj);
 
-		jsonValue(const jsonValue & other)
-			: m_type(other.m_type)
-		{
-			switch (this->m_type)
-			{
-			case type::boolean:
-				this->m_d.boolean = other.m_d.boolean;
-				break;
-			case type::number:
-				this->m_d.number = other.m_d.number;
-				break;
-			case type::string:
-				this->m_d.string = new std::string(*other.m_d.string);
-				break;
-			case type::array:
-				this->m_d.array = new jsonArray(*other.m_d.array);
-				break;
-			case type::object:
-				this->m_d.object = new jsonObject(*other.m_d.object);
-				break;
-			}
-		}
-		jsonValue(jsonValue && other) noexcept
-			: m_type(other.m_type), m_d(other.m_d)
-		{
-			other.m_type = type::null;
-			other.m_d    = { 0 };
-		}
-		jsonValue & operator=(const jsonValue & other)
-		{
-			this->~jsonValue();
-			this->m_type = other.m_type;
-			switch (this->m_type)
-			{
-			case type::boolean:
-				this->m_d.boolean = other.m_d.boolean;
-				break;
-			case type::number:
-				this->m_d.number = other.m_d.number;
-				break;
-			case type::string:
-				this->m_d.string = new std::string(*other.m_d.string);
-				break;
-			case type::array:
-				this->m_d.array = new jsonArray(*other.m_d.array);
-				break;
-			case type::object:
-				this->m_d.object = new jsonObject(*other.m_d.object);
-				break;
-			}
-			return *this;
-		}
-		jsonValue & operator=(jsonValue && other) noexcept
-		{
-			this->~jsonValue();
-			this->m_type = other.m_type;
-			this->m_d    = other.m_d;
-			other.m_type = type::null;
-			other.m_d    = { 0 };
-			return *this;
-		}
+		jsonValue(const jsonValue & other);
+		jsonValue(jsonValue && other) noexcept;
+		jsonValue & operator=(const jsonValue & other);
+		jsonValue & operator=(jsonValue && other) noexcept;
 
-		~jsonValue() noexcept
-		{
-			switch (this->m_type)
-			{
-			case type::string:
-				delete this->m_d.string;
-				break;
-			case type::array:
-				delete this->m_d.array;
-				break;
-			case type::object:
-				delete this->m_d.object;
-				break;
-			}
-			this->m_type = type::null;
-		}
-
+		~jsonValue() noexcept;
 
 
 		constexpr type getType() const noexcept
 		{
 			return this->m_type;
-		}
-		nullptr_t getNull() const
-		{
-			if (this->m_type != type::null)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
-			return nullptr;
 		}
 		std::string & getString()
 		{
@@ -327,39 +208,59 @@ namespace jsonlite2
 
 	};
 
-	class jsonKeyValue
+	class jsonArray
 	{
 	private:
 		friend class jsonValue;
-		friend class jsonArray;
+
+		std::vector<jsonValue> m_vals;
+
+		static inline jsonArray p_parse(const char * & it, const char * end);
+		std::string p_dump(std::size_t depth) const;
+
+	public:
+
+		std::string dump() const
+		{
+			return this->p_dump(0);
+		}
+
+	};
+
+	class jsonKeyValue
+	{
+	private:
 		friend class jsonObject;
 
 		std::string m_key;
 		jsonValue m_value;
+		bool m_empty{ true };
 
 		static inline jsonKeyValue p_parse(const char * & it, const char * end);
 		std::string p_dump(std::size_t depth) const;
 		
 	public:
 		jsonKeyValue() noexcept = default;
+		
 		jsonKeyValue(const std::string & key, const jsonValue & value = {})
-			: m_key(key), m_value(value)
+			: m_key(key), m_value(value), m_empty(false)
 		{
 		}
 		jsonKeyValue(std::string && key, jsonValue && value = {})
-			: m_key(std::move(key)), m_value(std::move(value))
+			: m_key(std::move(key)), m_value(std::move(value)), m_empty(false)
 		{
 		}
 
-		constexpr std::string & key() noexcept
+		constexpr bool empty() const noexcept
 		{
-			return this->m_key;
+			return this->m_empty;
 		}
+
 		constexpr const std::string & key() const noexcept
 		{
 			return this->m_key;
 		}
-		constexpr jsonValue & get() noexcept
+		jsonValue & get() noexcept
 		{
 			return this->m_value;
 		}
@@ -367,7 +268,7 @@ namespace jsonlite2
 		{
 			return this->m_value;
 		}
-		constexpr operator jsonValue & () noexcept
+		operator jsonValue & () noexcept
 		{
 			return this->m_value;
 		}
@@ -388,25 +289,24 @@ namespace jsonlite2
 	{
 	private:
 		friend class jsonValue;
-		friend class jsonKeyValue;
-		friend class jsonArray;
 
-		std::vector<std::unique_ptr<jsonKeyValue>> m_keyvalues;
+		std::vector<jsonKeyValue> m_keyvalues;
 		std::unordered_map<std::string, std::size_t> m_map;
 
 		static inline jsonObject p_parse(const char * & it, const char * end);
 		std::string p_dump(std::size_t depth) const;
 
 	public:
+
 		jsonKeyValue & operator[](const std::string & key)
 		{
 			auto it = this->m_map.find(key);
 			if (it == this->m_map.end())
 			{
 				this->m_map.emplace(key, this->m_keyvalues.size());
-				this->m_keyvalues.emplace_back(std::make_unique<jsonKeyValue>(key));
+				this->m_keyvalues.emplace_back(key);
 			}
-			return *this->m_keyvalues[it->second];
+			return this->m_keyvalues[it->second];
 		}
 		const jsonKeyValue & operator[](const std::string & key) const
 		{
@@ -415,7 +315,7 @@ namespace jsonlite2
 			{
 				throw std::runtime_error("Invalid JSON key!");
 			}
-			return *this->m_keyvalues[it->second];
+			return this->m_keyvalues[it->second];
 		}
 		jsonKeyValue & at(const std::string & key)
 		{
@@ -424,7 +324,7 @@ namespace jsonlite2
 			{
 				throw std::runtime_error("Invalid JSON key!");
 			}
-			return *this->m_keyvalues[it->second];
+			return this->m_keyvalues[it->second];
 		}
 		const jsonKeyValue & at(const std::string & key) const
 		{
@@ -433,7 +333,7 @@ namespace jsonlite2
 			{
 				throw std::runtime_error("Invalid JSON key!");
 			}
-			return *this->m_keyvalues[it->second];
+			return this->m_keyvalues[it->second];
 		}
 
 		bool remove(const std::string & key) noexcept
@@ -443,8 +343,9 @@ namespace jsonlite2
 			{
 				return false;
 			}
-			this->m_keyvalues[this->m_map.at(key)].reset();
+			this->m_keyvalues[it->second].~jsonKeyValue();//.reset();
 			this->m_map.erase(key);
+			return true;
 		}
 		
 		std::string dump() const
@@ -453,6 +354,106 @@ namespace jsonlite2
 		}
 
 	};
+
+	inline jsonValue::jsonValue(jsonArray * arr) noexcept
+		: m_type(type::array)
+	{
+		this->m_d.array = arr;
+	}
+	inline jsonValue::jsonValue(const jsonArray & arr)
+		: m_type(type::array)
+	{
+		this->m_d.array = new jsonArray(arr);
+	}
+	inline jsonValue::jsonValue(jsonObject * obj) noexcept
+		: m_type(type::object)
+	{
+		this->m_d.object = obj;
+	}
+	inline jsonValue::jsonValue(const jsonObject & obj)
+		: m_type(type::object)
+	{
+		this->m_d.object = new jsonObject(obj);
+	}
+
+	inline jsonValue::jsonValue(const jsonValue & other)
+		: m_type(other.m_type)
+	{
+		switch (this->m_type)
+		{
+		case type::boolean:
+			this->m_d.boolean = other.m_d.boolean;
+			break;
+		case type::number:
+			this->m_d.number = other.m_d.number;
+			break;
+		case type::string:
+			this->m_d.string = new std::string(*other.m_d.string);
+			break;
+		case type::array:
+			this->m_d.array = new jsonArray(*other.m_d.array);
+			break;
+		case type::object:
+			this->m_d.object = new jsonObject(*other.m_d.object);
+			break;
+		}
+	}
+	inline jsonValue::jsonValue(jsonValue && other) noexcept
+		: m_type(other.m_type), m_d(other.m_d)
+	{
+		other.m_type = type::null;
+		other.m_d    = { 0 };
+	}
+	inline jsonValue & jsonValue::operator=(const jsonValue & other)
+	{
+		this->~jsonValue();
+		this->m_type = other.m_type;
+		switch (this->m_type)
+		{
+		case type::boolean:
+			this->m_d.boolean = other.m_d.boolean;
+			break;
+		case type::number:
+			this->m_d.number = other.m_d.number;
+			break;
+		case type::string:
+			this->m_d.string = new std::string(*other.m_d.string);
+			break;
+		case type::array:
+			this->m_d.array = new jsonArray(*other.m_d.array);
+			break;
+		case type::object:
+			this->m_d.object = new jsonObject(*other.m_d.object);
+			break;
+		}
+		return *this;
+	}
+	inline jsonValue & jsonValue::operator=(jsonValue && other) noexcept
+	{
+		this->~jsonValue();
+		this->m_type = other.m_type;
+		this->m_d    = other.m_d;
+		other.m_type = type::null;
+		other.m_d    = { 0 };
+		return *this;
+	}
+
+	inline jsonValue::~jsonValue() noexcept
+	{
+		switch (this->m_type)
+		{
+		case type::string:
+			delete this->m_d.string;
+			break;
+		case type::array:
+			delete this->m_d.array;
+			break;
+		case type::object:
+			delete this->m_d.object;
+			break;
+		}
+		this->m_type = type::null;
+	}
 
 	// Value parsing
 
@@ -615,6 +616,11 @@ namespace jsonlite2
 					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
 				}
 			}
+			
+			if (done)
+			{
+				break;
+			}
 		}
 		return val;
 	}
@@ -624,6 +630,8 @@ namespace jsonlite2
 		assert(end != nullptr);
 
 		jsonKeyValue kv;
+		kv.m_empty = false;
+
 		++it;
 		for (const char * begin = it; it != end; ++it)
 		{
@@ -670,11 +678,9 @@ namespace jsonlite2
 			switch (*it)
 			{
 			case '"':
-			{
-				auto pitem = obj.m_keyvalues.emplace_back(std::make_unique<jsonKeyValue>(jsonKeyValue::p_parse(it, end))).get();
-				obj.m_map.emplace(pitem->m_key, obj.m_keyvalues.size() - 1);
+				obj.m_keyvalues.emplace_back(jsonKeyValue::p_parse(it, end));
+				obj.m_map.emplace(obj.m_keyvalues.back().m_key, std::size_t(obj.m_keyvalues.size() - 1));
 				break;
-			}
 			case '}':
 				ended = true;
 				/* fall through */
@@ -785,11 +791,11 @@ namespace jsonlite2
 
 		for (size_t i = 0; i < this->m_keyvalues.size(); ++i)
 		{
-			if (this->m_keyvalues[i].get() == nullptr)
+			if (this->m_keyvalues[i].empty())
 			{
 				continue;
 			}
-			out += this->m_keyvalues[i]->p_dump(depth + 1);
+			out += this->m_keyvalues[i].p_dump(depth + 1);
 			if (i < (this->m_keyvalues.size() - 1))
 			{
 				out.back() = ',';
@@ -806,19 +812,19 @@ namespace jsonlite2
 
 	class json
 	{
+	private:
+		jsonValue m_value;
+	
 	public:
 		json() noexcept = default;
 		json(const jsonValue & v)
-			: m_file(v)
+			: m_value(v)
 		{
 		}
 		json(jsonValue && v) noexcept
-			: m_file(std::move(v))
+			: m_value(std::move(v))
 		{
 		}
-
-	private:
-		jsonValue m_file;
 		
 		static inline void p_checkValue(const char * & it, const char * end, error & err) noexcept;
 		static inline void p_checkKeyValue(const char * & it, const char * end, error & err) noexcept;
@@ -841,6 +847,13 @@ namespace jsonlite2
 		}
 		static inline json p_parse(const char * str, std::size_t len)
 		{
+			assert(str != nullptr);
+
+			auto err = p_check(str, len);
+			if (err != error::ok)
+			{
+				throw std::runtime_error(g_jsonErrors[std::uint8_t(err)]);
+			}
 			return { jsonValue::p_parse(str, str + len) };
 		}
 
@@ -860,7 +873,7 @@ namespace jsonlite2
 
 		static inline json parse(const char * str, std::size_t len = 0)
 		{
-			// If length not give, calc
+			// If length not given, calc
 			if (len == 0)
 			{
 				len = std::char_traits<char>::length(str);
@@ -874,24 +887,24 @@ namespace jsonlite2
 		}
 		std::string dump() const
 		{
-			return this->m_file.dump();
+			return this->m_value.dump();
 		}
 
-		constexpr operator jsonValue & () noexcept
+		operator jsonValue & () noexcept
 		{
-			return this->m_file;
+			return this->m_value;
 		}
 		constexpr operator const jsonValue & () const noexcept
 		{
-			return this->m_file;
+			return this->m_value;
 		}
-		constexpr jsonValue & get() noexcept
+		jsonValue & get() noexcept
 		{
-			return this->m_file;
+			return this->m_value;
 		}
 		constexpr const jsonValue & get() const noexcept
 		{
-			return this->m_file;
+			return this->m_value;
 		}
 
 	};
