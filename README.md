@@ -43,6 +43,12 @@ If you want you can compile the library yourself, just use the `makefile` provid
 Also, a sophisticated single-include C++ version of this library is being planned...
 
 
+# About testing
+
+Although light testing has been done with the library, feel free to report any bugs
+that you may find under **[Issues](https://github.com/makuke1234/jsonlite2/issues)**.
+
+
 # Licensing
 
 This project is under the MIT license.
