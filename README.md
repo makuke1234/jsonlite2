@@ -25,6 +25,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog - C version
 
+* 1.4
+	* Fix bug in syntax checker, checker gave false positive on missing quotation mark `"` when the file contains only one string as a value
 * 1.3
 	* Skip NULL values when dumping object
 * 1.2
@@ -37,7 +39,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog - C++ version
 
-* Planned
+* 1.3 (postumous)
+	* Initial release
 
 
 # A C++ version
