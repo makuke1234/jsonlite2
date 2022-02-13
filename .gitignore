@@ -1,8 +1,8 @@
 /test.cpp
 /makefile
-/*test.exe
 /notes.yaml
 .vscode
 obj*
 bin*
 *.zip
+*.exe

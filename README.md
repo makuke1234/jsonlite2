@@ -7,7 +7,7 @@
 ![C version](https://img.shields.io/badge/version-C99-blue.svg)
 
 A light-weight C JSON library, relying on KISS (Keep It Stupid Simple)
-convention (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
+principle (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
 This time I decided to make the C version first, translating it to C++ afterwards seemed easier to me.
 
 Yes, this library is designed to aim for fast compilation times, simplicity,
@@ -43,9 +43,11 @@ If you want you can compile the library yourself, just use the `makefile` provid
 	* Initial release
 
 
-# A C++ version
+# The C++ version
 
-Also, a sophisticated single-include C++ version of this library is being planned...
+The C++ version of this library is a single-include header file, C++11 compliant, yet
+again relying on KISS principle. This time I decided not to use custom exceptions,
+also, the linter part of it is almost exception-free.
 
 
 # About testing
