@@ -1,23 +1,31 @@
 # jsonlite2
 
-![Release version](https://img.shields.io/badge/alpha-v0.1.0-red.svg)
-![C++ version](https://img.shields.io/badge/version-C++11-blue.svg)
+> Good things in life are free...
 
-A light-weight single-include C++ JSON library, relying on KISS (Keep It Stupid Simple)
-convention and C++11 STL (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
+[![Release version](https://img.shields.io/github/v/release/makuke1234/jsonlite2?display_name=release&include_prereleases)](https://github.com/makuke1234/femto/releases/latest)
+[![Total downloads](https://img.shields.io/github/downloads/makuke1234/jsonlite2/total)](https://github.com/makuke1234/jsonlite2/releases)
+![C version](https://img.shields.io/badge/version-C99-blue.svg)
+
+A light-weight C JSON library, relying on KISS (Keep It Stupid Simple)
+convention (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
+This time I decided to make the C version first, translating it to C++ afterwards seemed easier to me.
+
+Yes, this library is designed to aim for fast compilation times, simplicity,
+ease of use and full compliancy with JSON standard.
 
 
 # Overview
 
-Yes, this library is designed to aim for fast compilation times, simplicity and
-ease of use and almost full compliancy with JSON standard, nothing else.
+Both 32-bit and 64-bit Windows binaries of this library can be obtained [here](https://github.com/makuke1234/jsonlite2/releases). The library has been compiled with MinGW GCC and should also be compatible
+with Microsoft's Visual C++ compiler and the others, since MinGW uses the same format for
+C libraries.
 
 
-# C bindings
+# A C++ version
 
-Yet again bindings for C are planned like with my other jsonlite library.
+Also, a sophisticated single-include C++ version of this library is being planned...
 
 
 # Licensing
 
-As stated, this project follows the MIT license.
+This project is under the MIT license.
