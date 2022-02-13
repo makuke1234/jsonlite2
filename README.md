@@ -16,6 +16,12 @@ This time I decided to make the C version first, translating it to C++ afterward
 Yes, this library is designed to aim for fast compilation times, simplicity,
 ease of use and full compliance with JSON standard.
 
+## The C++ version
+
+The C++ version of this library is a single-include header file, C++11 compliant, yet
+again relying on KISS principle. This time I decided not to use custom exceptions,
+also, the linter part of it is almost exception-free.
+
 
 # Obtaining
 
@@ -39,13 +45,6 @@ If you want you can compile the library yourself, just use the `makefile` provid
 	* Minor optimisation in value type, use uint8_t instead of enum type itself
 * 1.0
 	* Initial release
-
-
-# The C++ version
-
-The C++ version of this library is a single-include header file, C++11 compliant, yet
-again relying on KISS principle. This time I decided not to use custom exceptions,
-also, the linter part of it is almost exception-free.
 
 
 # About testing
