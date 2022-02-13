@@ -25,6 +25,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog - C version
 
+* 1.2
+	* Make error code UTF-8 instead of UTF-16
 * 1.1
 	* Minor optimisation in value type, use uint8_t instead of enum type itself
 * 1.0
