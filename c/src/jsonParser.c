@@ -778,7 +778,7 @@ static inline void json_inner_checkValue(const char * restrict * restrict it, co
 					break;
 				}
 			}
-			if (*it == end)
+			if (!done)
 			{
 				*perr = jsonErr_noTerminatingQuote;
 			}

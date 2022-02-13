@@ -616,7 +616,7 @@ namespace jsonlite2
 					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
 				}
 			}
-			
+
 			if (done)
 			{
 				break;
@@ -954,7 +954,7 @@ namespace jsonlite2
 						break;
 					}
 				}
-				if (it == end)
+				if (!done)
 				{
 					err = error::noTerminatingQuote;
 				}
