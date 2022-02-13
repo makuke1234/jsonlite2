@@ -25,6 +25,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog - C version
 
+* 1.3
+	* Skip NULL values when dumping object
 * 1.2
 	* Make error code UTF-8 instead of UTF-16
 * 1.1
