@@ -9,322 +9,1007 @@
 
 #include <cstdint>
 #include <cstring>
+#include <cassert>
 
 
 namespace jsonlite2
 {
+	auto constexpr MAX_NUMBERLEN{ 32 };
+
 	template<class T>
-	static constexpr T const & var_max(T const & val1) noexcept
+	static constexpr const T & var_max(const T & val1) noexcept
 	{
 		return val1;
 	}
 	template<class T, class ... Args>
-	static constexpr T const & var_max(T const & val1, T const & val2, Args const & ... args) noexcept
+	static constexpr const T & var_max(const T & val1, const T & val2, const Args & ... args) noexcept
 	{
 		return var_max((val1 < val2) ? val2 : val1, args...); 
 	}
+	template<class T>
+	static constexpr const T & var_min(const T & val1) noexcept
+	{
+		return val1;
+	}
+	template<class T, class ... Args>
+	static constexpr const T & var_min(const T & val1, const T & val2, const Args & ... args) noexcept
+	{
+		return var_min((val1 < val2) ? val1 : val2, args...);
+	}
 
+	enum class error : std::uint8_t
+	{
+		ok,
+		unknown,
+		mem,
+		invalidChar,
+		moreThan1Main,
+		noKey,
+		noTerminatingQuote,
+		invalidValueSeparator,
+		noValueSeparator,
+		noValue,
+		noSeparator,
+		excessiveArrayTerminator,
+		excessiveObjectTerminator,
+		noArrayTerminator,
+		noObjectTerminator,
+		invalidTerminator,
+		multipleDecimalPoints,
+		noDigitAfterDecimal,
+	};
+	
+	constexpr const char * g_jsonErrors[]
+	{
+		"All OK",
+		"Unknown error!",
+		"Memory allocation error!",
+		"Invalid character!",
+		"More than 1 main value in file!",
+		"No key in object!",
+		"No terminating quote for string!",
+		"Invalid value separator in object!",
+		"No value separator in object!",
+		"No value in object's key-value pair!",
+		"No spearator between values!",
+		"Excessive array terminator!",
+		"Excessive object terminator!",
+		"No terminating ']'!",
+		"No terminating '}'!",
+		"Invalid terminator!",
+		"Multiple decimal points '.' in number!",
+		"No digits after decimal point!",
+	};
+
+	class jsonValue;
+	class jsonKeyValue;
+	class jsonObject;
+	
+
+	class jsonArray
+	{
+	private:
+		friend class jsonValue;
+		friend class jsonKeyValue;
+		friend class jsonObject;
+
+		std::vector<jsonValue> m_vals;
+
+		static inline jsonArray p_parse(const char * & it, const char * end);
+		std::string p_dump(std::size_t depth) const;
+
+	public:
+		std::string dump() const
+		{
+			return this->p_dump(0);
+		}
+
+	};
 
 	class json;
 
-	class exception : public std::exception
+	class jsonValue
 	{
+	public:
+		enum class type : std::uint8_t
+		{
+			null,
+			string,
+			boolean,
+			number,
+			array,
+			object
+		};
+
 	private:
+		friend class jsonKeyValue;
+		friend class jsonArray;
+		friend class jsonObject;
 		friend class json;
-		enum class type : std::int_fast8_t
-		{
-			Unknown,
-			
-			ParseNoKeyValue,
 
-		};
-		static constexpr const char * exceptionMessages[]
+		type m_type;
+		union data
 		{
-			"Unknown exception.",
-			"Object key's value not found!"
-		};
-		type Type{ type::Unknown };
-		const char * exceptionMessage{ exceptionMessages[std::underlying_type<type>::type(Type)] };
-
-		exception() noexcept = default;
-		explicit exception(const char * eMsg) noexcept
-			: exceptionMessage(eMsg)
-		{}
+			std::string * string;
+			bool boolean;
+			double number;
+			jsonArray * array;
+			jsonObject * object;
+		} m_d;
+		
+		static inline jsonValue p_parse(const char * & it, const char * end);
+		std::string p_dump(std::size_t depth) const;
 
 	public:
-		explicit exception(type Type_) noexcept
-			: Type(Type_)
-		{}
-
-		const char * what() const throw() override
+		std::string dump() const
 		{
-			return this->exceptionMessage;
+			return this->p_dump(0);
 		}
+
 	};
+
+	class jsonKeyValue
+	{
+	private:
+		friend class jsonValue;
+		friend class jsonArray;
+		friend class jsonObject;
+
+		std::string m_key;
+		jsonValue m_value;
+
+		static inline jsonKeyValue p_parse(const char * & it, const char * end);
+		std::string p_dump(std::size_t depth) const;
+		
+	public:
+		std::string dump() const
+		{
+			return this->p_dump(0);
+		}
+
+	};
+
+	class jsonObject
+	{
+	private:
+		friend class jsonValue;
+		friend class jsonKeyValue;
+		friend class jsonArray;
+
+		std::vector<std::unique_ptr<jsonKeyValue>> m_keyvalues;
+		std::unordered_map<std::string, jsonKeyValue *> m_map;
+
+		static inline jsonObject p_parse(const char * & it, const char * end);
+		std::string p_dump(std::size_t depth) const;
+
+	public:
+		std::string dump() const
+		{
+			return this->p_dump(0);
+		}
+
+	};
+
+	// Value parsing
+
+	inline jsonArray jsonArray::p_parse(const char * & it, const char * end)
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+
+		for (; it != end; ++it)
+		{
+			if (*it == '[')
+			{
+				++it;
+				break;
+			}
+		}
+		jsonArray arr;
+
+		bool ended = false;
+		while (it != end)
+		{
+			switch(*it)
+			{
+			case ']':
+				ended = true;
+				/* fall through */
+			case '}':
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				++it;
+				break;
+			default:
+				arr.m_vals.emplace_back(jsonValue::p_parse(it, end));
+			}
+			if (ended)
+			{
+				break;
+			}
+		}
+
+		if (!ended)
+		{
+			throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+		}
+
+		return arr;
+	}
+	inline jsonValue jsonValue::p_parse(const char * & it, const char * end)
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+
+		jsonValue val;
+
+		bool done = false;
+		for (; it != end; ++it)
+		{
+			switch (*it)
+			{
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				break;
+			case '{':
+				val.m_type = type::object;
+				val.m_d.object = new jsonObject(jsonObject::p_parse(it, end));
+				done = true;
+				break;
+			case '[':
+				val.m_type = type::array;
+				val.m_d.array = new jsonArray(jsonArray::p_parse(it, end));
+				done = true;
+				break;
+			case '"':
+				++it;
+				for (const char * begin = it; it != end; ++it)
+				{
+					if ((*it == '\\') && ((it + 1) != end))
+					{
+						++it;
+						continue;
+					}
+					else if (*it == '"')
+					{
+						val.m_type = type::string;
+						val.m_d.string = new std::string(begin, std::size_t(it - begin));
+						done = true;
+						++it;
+						break;
+					}
+				}
+				if (!done)
+				{
+					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+				}
+				break;
+			case 'f':
+				if (((end - it) >= 5) && (std::strncmp(it, "false", 5) == 0))
+				{
+					it += 5;
+					val.m_type = type::boolean;
+					val.m_d.boolean = false;
+					done = true;
+				}
+				else
+				{
+					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+				}
+				break;
+			case 't':
+				if (((end - it) >= 4) && (std::strncmp(it, "true", 4) == 0))
+				{
+					it += 4;
+					val.m_type = type::boolean;
+					val.m_d.boolean = true;
+					done = true;
+				}
+				else
+				{
+					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+				}
+				break;
+			case 'n':
+				if (((end - it) >= 4) && (std::strncmp(it, "null", 4) == 0))
+				{
+					it += 4;
+					val.m_type = type::null;
+					done = true;
+				}
+				else
+				{
+					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+				}
+				break;
+			default:
+				if ((*it >= '0') && (*it <= '9'))
+				{
+					const char * begin = it;
+
+					for (; it != end; ++it)
+					{
+						if (((*it >= '0') && (*it <= '9')) || (*it == '.'))
+						{
+							continue;
+						}
+						else
+						{
+							break;
+						}
+					}
+					val.m_type = type::number;
+					val.m_d.number = std::strtod(begin, nullptr);
+					done = true;
+				}
+				else
+				{
+					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+				}
+			}
+		}
+		return val;
+	}
+	inline jsonKeyValue jsonKeyValue::p_parse(const char * & it, const char * end)
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+
+		jsonKeyValue kv;
+		++it;
+		for (const char * begin = it; it != end; ++it)
+		{
+			if ((*it == '\\') && ((it + 1) != end))
+			{
+				++it;
+				continue;
+			}
+			else if (*it == '"')
+			{
+				kv.m_key = std::string(begin, std::size_t(it - begin));
+				++it;
+				break;
+			}
+		}
+		for (; it != end; ++it)
+		{
+			if (*it == ':')
+			{
+				++it;
+				break;
+			}
+		}
+		kv.m_value = jsonValue::p_parse(it, end);
+		return kv;
+	}
+	inline jsonObject jsonObject::p_parse(const char * & it, const char * end)
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+
+		jsonObject obj;
+		for (; it != end; ++it)
+		{
+			if (*it == '{')
+			{
+				++it;
+				break;
+			}
+		}
+		bool ended = false;
+		while (it != end)
+		{
+			switch (*it)
+			{
+			case '"':
+			{
+				auto pitem = obj.m_keyvalues.emplace_back(std::make_unique<jsonKeyValue>(jsonKeyValue::p_parse(it, end))).get();
+				obj.m_map.emplace(pitem->m_key, pitem);
+				break;
+			}
+			case '}':
+				ended = true;
+				/* fall through */
+			case ']':
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				++it;
+				break;
+			default:
+				throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+			}
+
+			if (ended)
+			{
+				break;
+			}
+		}
+		if (!ended)
+		{
+			throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+		}
+
+		return obj;
+	}
+
+	std::string jsonArray::p_dump(std::size_t depth) const
+	{
+		std::string out(depth, '\t');
+		out += "[\n";
+
+		for (size_t i = 0; i < this->m_vals.size(); ++i)
+		{
+			out += this->m_vals[i].p_dump(depth + 1);
+			if (i < (this->m_vals.size() - 1))
+			{
+				out.back() = ',';
+				out += '\n';
+			}
+		}
+
+		out.append(depth, '\t');
+		out += "]\n";
+
+		return out;
+	}
+	std::string jsonValue::p_dump(std::size_t depth) const
+	{
+		switch (this->m_type)
+		{
+		case type::array:
+			return this->m_d.array->p_dump(depth);
+		case type::object:
+			return this->m_d.object->p_dump(depth);
+		default:
+		{
+			std::string out(depth, '\t');
+			switch (this->m_type)
+			{
+			case type::null:
+				out += "null";
+				break;
+			case type::string:
+				out += '"';
+				out += *this->m_d.string;
+				out += '"';
+				break;
+			case type::boolean:
+				out += (this->m_d.boolean) ? "true" : "false";
+				break;
+			case type::number:
+			{
+				char temp[MAX_NUMBERLEN];
+				auto stringLen = sprintf(temp, "%.15g", this->m_d.number);
+				
+				if (stringLen <= 0)
+				{
+					throw std::runtime_error("Failed to convert number to string!");
+				}
+				out.append(temp, stringLen);
+				
+				break;
+			}
+			}
+			out += '\n';
+			return out;
+		}
+		}
+	}
+	std::string jsonKeyValue::p_dump(std::size_t depth) const
+	{
+		std::string out(depth, '\t');
+		
+		out += '"';
+		out += this->m_key;
+		out += "\":\n";
+
+		out += this->m_value.p_dump(depth);
+
+		return out;
+	}
+	std::string jsonObject::p_dump(std::size_t depth) const
+	{
+		std::string out(depth, '\t');
+		
+		out += "{\n";
+
+		for (size_t i = 0; i < this->m_keyvalues.size(); ++i)
+		{
+			if (this->m_keyvalues[i].get() == nullptr)
+			{
+				continue;
+			}
+			out += this->m_keyvalues[i]->p_dump(depth + 1);
+			if (i < (this->m_keyvalues.size() - 1))
+			{
+				out.back() = ',';
+				out += '\n';
+			}
+		}
+
+		out.append(depth, '\t');
+		out += "}\n";
+
+		return out;
+	}
+
 
 	class json
 	{
 	public:
-		// Type aliasing common types
-		using charT   = char;
-		using numberT = double;
-		using boolT   = bool;
-
-
-		using stringT = std::basic_string<charT>;
-		using osstreamT = std::basic_ostringstream<charT>;
-		
-		template<class T>
-		using vectorT = std::vector<T>;
-		using arrayT  = vectorT<json>;
-		
-		template<class T>
-		using objmapT = std::unordered_map<stringT, T>;
-		using objectT = objmapT<json>;
+		json() noexcept = default;
+		json(const jsonValue & v)
+			: m_file(v)
+		{
+		}
+		json(jsonValue && v) noexcept
+			: m_file(std::move(v))
+		{
+		}
 
 	private:
-		static constexpr auto TypeUnion_sz = var_max(
-			sizeof(stringT), sizeof(numberT), sizeof(boolT),
-			sizeof(vectorT<void *>), sizeof(objmapT<void *>)
-		);
-		union TypeUnion
-		{
-			std::uint8_t bytes[TypeUnion_sz];
-		};
-		enum class datatype : std::int8_t
-		{
-			Null,
-			String,
-			Number,
-			Boolean,
-			Array,
-			Object
-		};
-
-		TypeUnion ndata;
-		datatype role { datatype::Null };
-
-		template<class ... Args>
-		inline void make_String(Args & ... args)
-		{
-			new (&this->ndata) stringT(std::forward<Args>(args)...);
-			role = datatype::String;
-		}
-		inline void make_Number(numberT value)
-		{
-			new (&this->ndata) numberT{ value };
-			role = datatype::Number;
-		}
-		inline void make_Bool(boolT value)
-		{
-			new (&this->ndata) boolT{ value };
-			role = datatype::Boolean;
-		}
-		template<class ... Args>
-		inline void make_Array(Args & ... args)
-		{
-			new (&this->ndata) arrayT(std::forward<Args>(args)...);
-			role = datatype::Array;
-		}
-		template<class ... Args>
-		inline void make_Object(Args & ... args)
-		{
-			new (&this->ndata) objectT(std::forward<Args>(args)...);
-			role = datatype::Object;
-		}
-
-		inline void destroy_String() noexcept
-		{
-			static_cast<stringT *>(static_cast<void *>(&this->ndata))->~basic_string();
-			role = datatype::Null;
-		}
-		inline void destroy_Number_or_Boolean() noexcept
-		{
-			role = datatype::Null;
-		}
-		inline void destroy_Array() noexcept
-		{
-			static_cast<arrayT *>(static_cast<void *>(&this->ndata))->~vector();
-			role = datatype::Null;
-		}
-		inline void destroy_Object() noexcept
-		{
-			static_cast<objectT *>(static_cast<void *>(&this->ndata))->~unordered_map();
-			role = datatype::Null;
-		}
-
-		inline stringT & get_String() noexcept
-		{
-			return *static_cast<stringT *>(static_cast<void *>(&this->ndata));
-		}
-		inline stringT const & get_String() const noexcept
-		{
-			return *static_cast<const stringT *>(static_cast<const void *>(&this->ndata));
-		}
-		inline numberT & get_Number() noexcept
-		{
-			return *static_cast<numberT *>(static_cast<void *>(&this->ndata));
-		}
-		inline numberT const & get_Number() const noexcept
-		{
-			return *static_cast<const numberT *>(static_cast<const void *>(&this->ndata));
-		}
-		inline boolT & get_Bool() noexcept
-		{
-			return *static_cast<boolT *>(static_cast<void *>(&this->ndata));
-		}
-		inline boolT const & get_Bool() const noexcept
-		{
-			return *static_cast<const boolT *>(static_cast<const void *>(&this->ndata));
-		}
-		inline arrayT & get_Array() noexcept
-		{
-			return *static_cast<arrayT *>(static_cast<void *>(&this->ndata));
-		}
-		inline arrayT const & get_Array() const noexcept
-		{
-			return *static_cast<const arrayT *>(static_cast<const void *>(&this->ndata));
-		}
-		inline objectT & get_Object() noexcept
-		{
-			return *static_cast<objectT *>(static_cast<void *>(&this->ndata));
-		}
-		inline objectT const & get_Object() const noexcept
-		{
-			return *static_cast<const objectT *>(static_cast<const void *>(&this->ndata));
-		}
-
-
+		jsonValue m_file;
 		
-		static inline json p_parse(const charT * str, std::size_t len);
-		static inline stringT p_dump(json const & instance, std::size_t depth);
+		static inline void p_checkValue(const char * & it, const char * end, error & err) noexcept;
+		static inline void p_checkKeyValue(const char * & it, const char * end, error & err) noexcept;
+		static inline std::size_t p_checkValues(const char * & it, const char * end, error & err) noexcept;
+		static inline void p_checkObject(const char * & it, const char * end, error & err) noexcept;
+		static inline void p_checkArray(const char * & it, const char * end, error & err) noexcept;
+
+		static inline error p_check(const char * str, std::size_t len) noexcept
+		{
+			assert(str != nullptr);
+
+			error err{ error::ok };
+			size_t firstLevelObjects = p_checkValues(str, str + len, err);
+
+			if ((err == error::ok) && (firstLevelObjects > 1))
+			{
+				return error::moreThan1Main;
+			}
+			return err;
+		}
+		static inline json p_parse(const char * str, std::size_t len)
+		{
+			return { jsonValue::p_parse(str, str + len) };
+		}
 
 	public:
-		static inline json parse(const charT * str, std::size_t len = 0)
+		static inline error check(const char * str, std::size_t len = 0) noexcept
+		{
+			if (len == 0)
+			{
+				len = std::char_traits<char>::length(str);
+			}
+			return json::p_check(str, len);
+		}
+		static inline error check(const std::string & str) noexcept
+		{
+			return json::p_check(str.c_str(), str.length());
+		}
+
+		static inline json parse(const char * str, std::size_t len = 0)
 		{
 			// If length not give, calc
 			if (len == 0)
-				len = std::char_traits<charT>::length(str);
+			{
+				len = std::char_traits<char>::length(str);
+			}
 			// Calling another private recursive function to avoid length-checking
 			return json::p_parse(str, len);
 		}
-		static inline json parse(stringT const & str)
+		static inline json parse(const std::string & str)
 		{
 			return json::p_parse(str.c_str(), str.length());
 		}
-		inline stringT dump() const
+		std::string dump() const
 		{
-			return this->p_dump(*this, std::size_t(1));
+			return this->m_file.dump();
 		}
 
-		json() noexcept = default;
-		json(json const & other);
-		json(json && other) noexcept;
-		json & operator=(json const & other);
-		json & operator=(json && other) noexcept;
-		~json() noexcept;
-
-		json & operator[](const char * key_);
-		json const & operator[](const char * key_) const;
-		json & operator[](std::string const & key_);
-		json const & operator[](std::string const & key_) const;
-
-		std::string & get();
-		std::string const & get() const;
+		constexpr operator jsonValue & () noexcept
+		{
+			return this->m_file;
+		}
+		constexpr operator const jsonValue & () const noexcept
+		{
+			return this->m_file;
+		}
+		constexpr jsonValue & get() noexcept
+		{
+			return this->m_file;
+		}
+		constexpr const jsonValue & get() const noexcept
+		{
+			return this->m_file;
+		}
 
 	};
 
-	inline json json::p_parse(const json::charT * str, std::size_t len)
-	{
-		return {};
-	}
-	inline json::stringT json::p_dump(json const & inst, std::size_t depth)
-	{
-		osstreamT dumpstream;
+	// Value checking
 
-		return dumpstream.str();
+	inline void json::p_checkValue(const char * & it, const char * end, error & err) noexcept
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+
+		bool done = false;
+		for (;it != end; ++it)
+		{
+			switch (*it)
+			{
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				break;
+			case ']':
+			case '}':
+				err = error::noValue;
+				break;
+			case '{':
+				json::p_checkObject(it, end, err);
+				done = true;
+				break;
+			case '[':
+				json::p_checkArray(it, end, err);
+				done = true;
+				break;
+			case '"':
+				++it;
+				for (; it != end; ++it)
+				{
+					if ((*it == '\\') && ((it + 1) != end))
+					{
+						++it;
+						continue;
+					}
+					else if (*it == '"')
+					{
+						done = true;
+						++it;
+						break;
+					}
+				}
+				if (it == end)
+				{
+					err = error::noTerminatingQuote;
+				}
+				break;
+			case 'f':
+				if (((end - it) >= 5) && (strncmp(it, "false", 5) == 0))
+				{
+					it += 5;
+					done = true;
+				}
+				else
+				{
+					err = error::invalidChar;
+				}
+				break;
+			case 't':
+				if (((end - it) >= 4) && (strncmp(it, "true", 4) == 0))
+				{
+					it += 4;
+					done = true;
+				}
+				else
+				{
+					err = error::invalidChar;
+				}
+				break;
+			case 'n':
+				if (((end - it) >= 4) && (strncmp(it, "null", 4) == 0))
+				{
+					it += 4;
+					done = true;
+				}
+				else
+				{
+					err = error::invalidChar;
+				}
+				break;
+			default:
+				if ((*it >= '0') && (*it <= '9'))
+				{
+					done = true;
+
+					bool dot = false;
+					bool decAfterDot = false;
+
+					++it;
+					for (; it != end; ++it)
+					{
+						if ((*it >= '0') && (*it <= '9'))
+						{
+							decAfterDot = dot;
+							continue;
+						}
+						else if (*it == '.')
+						{
+							if (dot)
+							{
+								err = error::multipleDecimalPoints;
+								break;
+							}
+							else
+							{
+								dot = true;
+							}
+						}
+						else
+						{
+							break;
+						}
+					}
+					if (dot && !decAfterDot)
+					{
+						err = error::noDigitAfterDecimal;
+					}
+				}
+				else
+				{
+					err = error::invalidChar;
+				}
+			}
+			if (done || (err != error::ok))
+			{
+				break;
+			}
+		}
+
+		// Find for comma, ] or }
+		for (; it != end; ++it)
+		{
+			if ((*it == ' ') || (*it == '\t') || (*it == '\n') || (*it == '\r'))
+			{
+				continue;
+			}
+			else if ((*it == ']') || (*it == '}'))
+			{
+				break;
+			}
+			else if (*it == ',')
+			{
+				++it;
+				break;
+			}
+			else
+			{
+				err = error::invalidTerminator;
+				break;
+			}
+		}
+	}
+	inline void json::p_checkKeyValue(const char * & it, const char * end, error & err) noexcept
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+		
+		for (; it != end; ++it)
+		{
+			if (*it == '"')
+			{
+				break;
+			}
+			else if ((*it == ' ') || (*it == '\t') || (*it == '\n') || (*it == '\r'))
+			{
+				continue;
+			}
+			else
+			{
+				err = error::invalidChar;
+				return;
+			}
+		}
+		if (it == end)
+		{
+			err = error::noKey;
+			return;
+		}
+
+		++it;
+		for (; it != end; ++it)
+		{
+			if ((*it == '\\') && ((it + 1) != end))
+			{
+				++it;
+				continue;
+			}
+			else if (*it == '"')
+			{
+				break;
+			}
+		}
+		if (it == end)
+		{
+			err = error::noTerminatingQuote;
+			return;
+		}
+
+		++it;
+		for (; it != end; ++it)
+		{
+			if (*it == ':')
+			{
+				break;
+			}
+			switch (*it)
+			{
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				break;
+			default:
+				err = error::invalidChar;
+				return;
+			}
+		}
+
+		if (it == end)
+		{
+			err = error::noValueSeparator;
+			return;
+		}
+
+		++it;
+		json::p_checkValue(it, end, err);
+	}
+	inline std::size_t json::p_checkValues(const char * & it, const char * end, error & err) noexcept
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+		
+		bool done = false;
+		size_t vals = 0;
+		while (it != end)
+		{
+			switch (*it)
+			{
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				++it;
+				break;
+			case '}':
+				err = error::invalidTerminator;
+				break;
+			case ']':
+				done = true;
+				break;
+			default:
+				json::p_checkValue(it, end, err);
+				++vals;
+			}
+			if (done || (err != error::ok))
+			{
+				break;
+			}
+		}
+		return vals;
+	}
+	inline void json::p_checkObject(const char * & it, const char * end, error & err) noexcept
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+
+		for (; it != end; ++it)
+		{
+			if (*it == '{')
+			{
+				break;
+			}
+			else if ((*it == ' ') || (*it == '\t') || (*it == '\n') || (*it == '\r'))
+			{
+				continue;
+			}
+			else
+			{
+				err = error::invalidChar;
+				return;
+			}
+		}
+		if (it == end)
+		{
+			err = error::noValue;
+			return;
+		}
+		++it;
+
+		bool ended = false;
+		while (it != end)
+		{
+			switch (*it)
+			{
+			case '"':
+				json::p_checkKeyValue(it, end, err);
+				break;
+			case '}':
+				ended = true;
+				/* fall through */
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				++it;
+				break;
+			default:
+				err = error::invalidChar;
+			}
+
+			if (ended || (err != error::ok))
+			{
+				break;
+			}
+		}
+		if (!ended && (err == error::ok))
+		{
+			err = error::noObjectTerminator;
+		}
+	}
+	inline void json::p_checkArray(const char * & it, const char * end, error & err) noexcept
+	{
+		assert(it  != nullptr);
+		assert(end != nullptr);
+
+		for (; it != end; ++it)
+		{
+			if (*it == '[')
+			{
+				break;
+			}
+			else if ((*it == ' ') || (*it == '\t') || (*it == '\n') || (*it == '\r'))
+			{
+				continue;
+			}
+			else
+			{
+				err = error::invalidChar;
+				return;
+			}
+		}
+		if (it == end)
+		{
+			err = error::noValue;
+			return;
+		}
+		++it;
+
+		bool ended = false;
+		while (it != end)
+		{
+			switch (*it)
+			{
+			case ']':
+				ended = true;
+				/* fall through */
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				++it;
+				break;
+			default:
+				json::p_checkValues(it, end, err);
+			}
+
+			if (ended || (err != error::ok))
+			{
+				break;
+			}
+		}
+		if (!ended && (err == error::ok))
+		{
+			err = error::noArrayTerminator;
+		}
 	}
 
-	json::json(json const & other)
-		: role(other.role)
-	{
-		switch (this->role)
-		{
-		case datatype::String:
-			this->make_String(other.get_String());
-			break;
-		case datatype::Number:
-			this->get_Number() = other.get_Number();
-			break;
-		case datatype::Boolean:
-			this->get_Bool() = other.get_Bool();
-			break;
-		case datatype::Array:
-			this->make_Array(other.get_Array());
-			break;
-		case datatype::Object:
-			this->make_Object(other.get_Object());
-			break;
-		}
-	}
-	json::json(json && other) noexcept
-		: role(other.role)
-	{
-		std::memcpy(&this->ndata, &other.ndata, sizeof this->ndata);
-		std::memset(&other.ndata, 0, sizeof other.ndata);
-		other.role = datatype::Null;
-	}
-	json & json::operator=(json const & other)
-	{
-		this->~json();
-		this->role = other.role;
-		switch (this->role)
-		{
-		case datatype::String:
-			this->make_String(other.get_String());
-			break;
-		case datatype::Number:
-			this->get_Number() = other.get_Number();
-			break;
-		case datatype::Boolean:
-			this->get_Bool() = other.get_Bool();
-			break;
-		case datatype::Array:
-			this->make_Array(other.get_Array());
-			break;
-		case datatype::Object:
-			this->make_Object(other.get_Object());
-			break;
-		}
-		return *this;
-	}
-	json & json::operator=(json && other) noexcept
-	{
-		this->~json();
-		this->role = other.role;
-		other.role = datatype::Null;
-		std::memcpy(&this->ndata, &other.ndata, sizeof this->ndata);
-		std::memset(&other.ndata, 0, sizeof other.ndata);
-		return *this;
-	}
-	json::~json() noexcept
-	{
-		switch (this->role)
-		{
-		case datatype::String:
-			this->destroy_String();
-			break;
-		case datatype::Number:
-		case datatype::Boolean:
-			this->destroy_Number_or_Boolean();
-			break;
-		case datatype::Array:
-			this->destroy_Array();
-			break;
-		case datatype::Object:
-			this->destroy_Object();
-			break;
-		}
-	}
-	
 }
