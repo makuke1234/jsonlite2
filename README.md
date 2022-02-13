@@ -7,15 +7,17 @@
 ![C version](https://img.shields.io/badge/version-C99-blue.svg)
 ![C++ version](https://img.shields.io/badge/version-C++11-blue.svg)
 
-A light-weight C JSON library, relying on KISS (Keep It Stupid Simple)
+A light-weight C/C++ JSON library, relying on KISS (Keep It Stupid Simple)
 principle (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
 This time I decided to make the C version first, translating it to C++ afterwards seemed easier to me.
 
+## Overview
+
 Yes, this library is designed to aim for fast compilation times, simplicity,
-ease of use and full compliancy with JSON standard.
+ease of use and full compliance with JSON standard.
 
 
-# Overview
+# Obtaining
 
 Both 32-bit and 64-bit Windows binaries of this library can be obtained [here](https://github.com/makuke1234/jsonlite2/releases). The library has been compiled with MinGW GCC and should also be compatible
 with Microsoft's Visual C++ compiler and the others, since MinGW uses the same format for
@@ -24,10 +26,11 @@ C libraries.
 If you want you can compile the library yourself, just use the `makefile` provided in the `c` subdirectory.
 
 
-# Changelog - C version
+# Changelog
 
 * 1.4
 	* Fix bug in syntax checker, checker gave false positive on missing quotation mark `"` when the file contains only one string as a value
+	* Release first C++ version
 * 1.3
 	* Skip NULL values when dumping object
 * 1.2
@@ -35,12 +38,6 @@ If you want you can compile the library yourself, just use the `makefile` provid
 * 1.1
 	* Minor optimisation in value type, use uint8_t instead of enum type itself
 * 1.0
-	* Initial release
-
-
-# Changelog - C++ version
-
-* 1.4 (the C version equivalent)
 	* Initial release
 
 
@@ -55,8 +52,9 @@ also, the linter part of it is almost exception-free.
 
 Although light testing has been done with the library, feel free to report any bugs
 that you may find under **[Issues](https://github.com/makuke1234/jsonlite2/issues)**.
+This project is by no means perfect.
 
 
-# Licensing
+# License
 
 This project is under the MIT license.
