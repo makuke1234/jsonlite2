@@ -39,7 +39,7 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog - C++ version
 
-* 1.3 (postumous)
+* 1.4 (the C version equivalent)
 	* Initial release
 
 
