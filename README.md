@@ -23,6 +23,19 @@ C libraries.
 If you want you can compile the library yourself, just use the `makefile` provided in the `c` subdirectory.
 
 
+# Changelog - C version
+
+* 1.1
+	* Minor optimisation in value type, use uint8_t instead of enum type itself
+* 1.0
+	* Initial release
+
+
+# Changelog - C++ version
+
+* Planned
+
+
 # A C++ version
 
 Also, a sophisticated single-include C++ version of this library is being planned...

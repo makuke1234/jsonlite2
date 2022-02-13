@@ -44,7 +44,7 @@ $(OBJ):
 	mkdir $(OBJ)
 
 $(BIN):
-	mkdir: $(BIN)
+	mkdir $(BIN)
 
 clean:
 	rm -r -f $(OBJ)
