@@ -127,7 +127,7 @@ namespace jsonlite2
 		friend class jsonObject;
 		friend class json;
 
-		type m_type;
+		type m_type{ type::null };
 		union data
 		{
 			std::string * string;
@@ -141,6 +141,185 @@ namespace jsonlite2
 		std::string p_dump(std::size_t depth) const;
 
 	public:
+		jsonValue() noexcept = default;
+		jsonValue(nullptr_t) noexcept
+		{
+		}
+		jsonValue(std::string * str) noexcept
+			: m_type(type::string)
+		{
+			this->m_d.string = str;
+		}
+		jsonValue(const std::string & str)
+			: m_type(type::string)
+		{
+			this->m_d.string = new std::string(str);
+		}
+		jsonValue(bool boolean) noexcept
+			: m_type(type::boolean)
+		{
+			this->m_d.boolean = boolean;
+		}
+		jsonValue(double number) noexcept
+			: m_type(type::number)
+		{
+			this->m_d.number = number;
+		}
+		jsonValue(jsonArray * arr) noexcept
+			: m_type(type::array)
+		{
+			this->m_d.array = arr;
+		}
+		jsonValue(const jsonArray & arr)
+			: m_type(type::array)
+		{
+			this->m_d.array = new jsonArray(arr);
+		}
+		jsonValue(jsonObject * obj) noexcept
+			: m_type(type::object)
+		{
+			this->m_d.object = obj;
+		}
+		jsonValue(const jsonObject & obj)
+			: m_type(type::object)
+		{
+			this->m_d.object = new jsonObject(obj);
+		}
+
+		jsonValue(const jsonValue & other)
+			: m_type(other.m_type)
+		{
+			switch (this->m_type)
+			{
+			case type::boolean:
+				this->m_d.boolean = other.m_d.boolean;
+				break;
+			case type::number:
+				this->m_d.number = other.m_d.number;
+				break;
+			case type::string:
+				this->m_d.string = new std::string(*other.m_d.string);
+				break;
+			case type::array:
+				this->m_d.array = new jsonArray(*other.m_d.array);
+				break;
+			case type::object:
+				this->m_d.object = new jsonObject(*other.m_d.object);
+				break;
+			}
+		}
+		jsonValue(jsonValue && other) noexcept
+			: m_type(other.m_type), m_d(other.m_d)
+		{
+			other.m_type = type::null;
+			other.m_d    = { 0 };
+		}
+		jsonValue & operator=(const jsonValue & other)
+		{
+			this->~jsonValue();
+			this->m_type = other.m_type;
+			switch (this->m_type)
+			{
+			case type::boolean:
+				this->m_d.boolean = other.m_d.boolean;
+				break;
+			case type::number:
+				this->m_d.number = other.m_d.number;
+				break;
+			case type::string:
+				this->m_d.string = new std::string(*other.m_d.string);
+				break;
+			case type::array:
+				this->m_d.array = new jsonArray(*other.m_d.array);
+				break;
+			case type::object:
+				this->m_d.object = new jsonObject(*other.m_d.object);
+				break;
+			}
+			return *this;
+		}
+		jsonValue & operator=(jsonValue && other) noexcept
+		{
+			this->~jsonValue();
+			this->m_type = other.m_type;
+			this->m_d    = other.m_d;
+			other.m_type = type::null;
+			other.m_d    = { 0 };
+			return *this;
+		}
+
+		~jsonValue() noexcept
+		{
+			switch (this->m_type)
+			{
+			case type::string:
+				delete this->m_d.string;
+				break;
+			case type::array:
+				delete this->m_d.array;
+				break;
+			case type::object:
+				delete this->m_d.object;
+				break;
+			}
+			this->m_type = type::null;
+		}
+
+
+
+		constexpr type getType() const noexcept
+		{
+			return this->m_type;
+		}
+		nullptr_t getNull() const
+		{
+			if (this->m_type != type::null)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return nullptr;
+		}
+		std::string & getString()
+		{
+			if (this->m_type != type::string)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return *this->m_d.string;
+		}
+		bool & getBoolean()
+		{
+			if (this->m_type != type::boolean)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return this->m_d.boolean;
+		}
+		double & getNumber()
+		{
+			if (this->m_type != type::number)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return this->m_d.number;
+		}
+		jsonArray & getArray()
+		{
+			if (this->m_type != type::array)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return *this->m_d.array;
+		}
+		jsonObject & getObject()
+		{
+			if (this->m_type != type::object)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return *this->m_d.object;
+		}
+
 		std::string dump() const
 		{
 			return this->p_dump(0);
@@ -162,6 +341,42 @@ namespace jsonlite2
 		std::string p_dump(std::size_t depth) const;
 		
 	public:
+		jsonKeyValue() noexcept = default;
+		jsonKeyValue(const std::string & key, const jsonValue & value = {})
+			: m_key(key), m_value(value)
+		{
+		}
+		jsonKeyValue(std::string && key, jsonValue && value = {})
+			: m_key(std::move(key)), m_value(std::move(value))
+		{
+		}
+
+		constexpr std::string & key() noexcept
+		{
+			return this->m_key;
+		}
+		constexpr const std::string & key() const noexcept
+		{
+			return this->m_key;
+		}
+		constexpr jsonValue & get() noexcept
+		{
+			return this->m_value;
+		}
+		constexpr const jsonValue & get() const noexcept
+		{
+			return this->m_value;
+		}
+		constexpr operator jsonValue & () noexcept
+		{
+			return this->m_value;
+		}
+		constexpr operator const jsonValue & () const noexcept
+		{
+			return this->m_value;
+		}
+
+
 		std::string dump() const
 		{
 			return this->p_dump(0);
@@ -177,12 +392,61 @@ namespace jsonlite2
 		friend class jsonArray;
 
 		std::vector<std::unique_ptr<jsonKeyValue>> m_keyvalues;
-		std::unordered_map<std::string, jsonKeyValue *> m_map;
+		std::unordered_map<std::string, std::size_t> m_map;
 
 		static inline jsonObject p_parse(const char * & it, const char * end);
 		std::string p_dump(std::size_t depth) const;
 
 	public:
+		jsonKeyValue & operator[](const std::string & key)
+		{
+			auto it = this->m_map.find(key);
+			if (it == this->m_map.end())
+			{
+				this->m_map.emplace(key, this->m_keyvalues.size());
+				this->m_keyvalues.emplace_back(std::make_unique<jsonKeyValue>(key));
+			}
+			return *this->m_keyvalues[it->second];
+		}
+		const jsonKeyValue & operator[](const std::string & key) const
+		{
+			auto it = this->m_map.find(key);
+			if (it == this->m_map.end())
+			{
+				throw std::runtime_error("Invalid JSON key!");
+			}
+			return *this->m_keyvalues[it->second];
+		}
+		jsonKeyValue & at(const std::string & key)
+		{
+			auto it = this->m_map.find(key);
+			if (it == this->m_map.end())
+			{
+				throw std::runtime_error("Invalid JSON key!");
+			}
+			return *this->m_keyvalues[it->second];
+		}
+		const jsonKeyValue & at(const std::string & key) const
+		{
+			auto it = this->m_map.find(key);
+			if (it == this->m_map.end())
+			{
+				throw std::runtime_error("Invalid JSON key!");
+			}
+			return *this->m_keyvalues[it->second];
+		}
+
+		bool remove(const std::string & key) noexcept
+		{
+			auto it = this->m_map.find(key);
+			if (it == this->m_map.end())
+			{
+				return false;
+			}
+			this->m_keyvalues[this->m_map.at(key)].reset();
+			this->m_map.erase(key);
+		}
+		
 		std::string dump() const
 		{
 			return this->p_dump(0);
@@ -408,7 +672,7 @@ namespace jsonlite2
 			case '"':
 			{
 				auto pitem = obj.m_keyvalues.emplace_back(std::make_unique<jsonKeyValue>(jsonKeyValue::p_parse(it, end))).get();
-				obj.m_map.emplace(pitem->m_key, pitem);
+				obj.m_map.emplace(pitem->m_key, obj.m_keyvalues.size() - 1);
 				break;
 			}
 			case '}':
