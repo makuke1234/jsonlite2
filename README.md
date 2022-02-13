@@ -5,6 +5,7 @@
 [![Release version](https://img.shields.io/github/v/release/makuke1234/jsonlite2?display_name=release&include_prereleases)](https://github.com/makuke1234/femto/releases/latest)
 [![Total downloads](https://img.shields.io/github/downloads/makuke1234/jsonlite2/total)](https://github.com/makuke1234/jsonlite2/releases)
 ![C version](https://img.shields.io/badge/version-C99-blue.svg)
+![C++ version](https://img.shields.io/badge/version-C++11-blue.svg)
 
 A light-weight C JSON library, relying on KISS (Keep It Stupid Simple)
 principle (similar to my other json library [jsonlite](https://github.com/makuke1234/jsonlite)).
