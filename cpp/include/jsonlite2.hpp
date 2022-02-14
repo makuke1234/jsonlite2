@@ -119,7 +119,7 @@ namespace jsonlite2
 		} m_d;
 		
 		static inline jsonValue p_parse(const char * & it, const char * end);
-		std::string p_dump(std::size_t depth) const;
+		std::string p_dump(std::size_t depth, bool nonobj = false) const;
 
 	public:
 		jsonValue() noexcept = default;
@@ -749,7 +749,7 @@ namespace jsonlite2
 
 		return out;
 	}
-	std::string jsonValue::p_dump(std::size_t depth) const
+	std::string jsonValue::p_dump(std::size_t depth, bool nonobj) const
 	{
 		switch (this->m_type)
 		{
@@ -759,7 +759,11 @@ namespace jsonlite2
 			return this->m_d.object->p_dump(depth);
 		default:
 		{
-			std::string out(depth, '\t');
+			std::string out;
+			if (!nonobj)
+			{
+				out.append(depth, '\t');
+			}
 			switch (this->m_type)
 			{
 			case type::null:
@@ -798,9 +802,19 @@ namespace jsonlite2
 		
 		out += '"';
 		out += this->m_key;
-		out += "\":\n";
 
-		out += this->m_value.p_dump(depth);
+		bool nonObj = false;
+		switch (this->m_value.m_type)
+		{
+		case jsonValue::type::array:
+		case jsonValue::type::object:
+			break;
+		default:
+			nonObj = true;
+		}
+
+		out += nonObj ? "\": " : "\":\n";
+		out += this->m_value.p_dump(depth, nonObj);
 
 		return out;
 	}
