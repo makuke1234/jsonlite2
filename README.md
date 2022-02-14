@@ -34,6 +34,9 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog
 
+* 1.5
+	* Make value dumping more 'beautiful', fix C library linking issues
+	* Make minor optimisations
 * 1.4
 	* Fix bug in syntax checker, checker gave false positive on missing quotation mark `"` when the file contains only one string as a value
 	* Release first C++ version
