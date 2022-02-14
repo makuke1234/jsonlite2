@@ -34,6 +34,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog
 
+* 1.8
+	* Fix bug with object value fetching in C version
 * 1.7
 	* Fix bug with variable shadowing in C version
 * 1.6
