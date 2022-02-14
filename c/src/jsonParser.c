@@ -306,12 +306,12 @@ jsonErr_t jsonValue_dump(const jsonValue_t * restrict self, char ** restrict con
 			{
 				return jsonErr_mem;
 			}
-			size_t len = strlen(self->d.string);
-			if (dynstrncat_s(cont, prealCap, len + 1, self->d.string, len) == NULL)
+			size_t len1 = strlen(self->d.string);
+			if (dynstrncat_s(cont, prealCap, len + 1, self->d.string, len1) == NULL)
 			{
 				return jsonErr_mem;
 			}
-			if (dynstrncat_s(cont, prealCap, len + 1 + len, "\"\n", 2) == NULL)
+			if (dynstrncat_s(cont, prealCap, len + 1 + len1, "\"\n", 2) == NULL)
 			{
 				return jsonErr_mem;
 			}
