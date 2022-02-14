@@ -26,9 +26,7 @@ deb: debug
 
 release: $(RELOBJFILES)
 	ar rcs $(BIN)/lib$(TARGET).a $^
-	strip $(BIN)/lib$(TARGET).a
 	$(CC) $^ -shared -o $(BIN)/$(TARGET).dll $(CFLAGS) -Wl,--out-implib=$(BIN)/lib$(TARGET).dll.a
-	strip $(BIN)/lib$(TARGET).dll.a
 
 debug: $(DEBOBJFILES)
 	ar rcs $(BIN)/libdeb$(TARGET).a $^
