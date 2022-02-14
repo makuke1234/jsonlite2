@@ -6,15 +6,16 @@ CDEFFLAGS=-std=c++11 -Wall -Wextra -Wpedantic
 CFLAGS=-O3 -Wl,--strip-all,--build-id=none,--gc-sections -fno-ident
 CDEBFLAGS=-g -O0
 
-TARGET=test
+BIN=../../testing
+TARGET=cpptest
 
 default: debug
 
 debug: test.cpp
-	$(CXX) $^ -o deb$(TARGET).exe $(CDEFFLAGS) $(CDEBFLAGS)
+	$(CXX) $^ -o $(BIN)/deb$(TARGET).exe $(CDEFFLAGS) $(CDEBFLAGS)
 
 release: test.cpp
-	$(CXX) $^ -o $(TARGET).exe $(CDEFFLAGS) $(CFLAGS)
+	$(CXX) $^ -o $(BIN)/$(TARGET).exe $(CDEFFLAGS) $(CFLAGS)
 
 beau: beautifier.cpp
-	$(CXX) $^ -o beautifier.exe $(CDEFFLAGS) $(CFLAGS)
+	$(CXX) $^ -o $(BIN)/cppbeautifier.exe $(CDEFFLAGS) $(CFLAGS)

@@ -22,7 +22,7 @@ void testJL2(const char * contents, size_t contLen, const char * what, size_t ma
 	}
 
 	clock_t stop = clock();
-	printf("Time elapsed (%s):\t%g; %zu errors\n", what, (double)(stop - start) / (double)CLOCKS_PER_SEC, errors);
+	printf("Time elapsed (%s):\t%g seconds; %zu errors\n", what, (double)(stop - start) / (double)CLOCKS_PER_SEC, errors);
 }
 
 int main(int argc, char ** argv)
@@ -64,6 +64,8 @@ int main(int argc, char ** argv)
 
 		fread(contents, contLen, 1, inp);
 		fclose(inp);
+
+		printf("Contents length: %ld bytes\n", contLen);
 
 		testJL2(contents, contLen, "jsonlite2", maxIter);
 

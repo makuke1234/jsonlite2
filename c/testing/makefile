@@ -8,15 +8,16 @@ CFLAGS=-O3 -Wl,--strip-all,--build-id=none,--gc-sections -fno-ident
 CDEBFLAGS=-g -O0
 LIB=-static -ljsonlite2
 
-TARGET=test
+BIN=../../testing
+TARGET=ctest
 
 default: debug
 
 debug: test.c
-	$(CC) $^ -o deb$(TARGET).exe $(CDEFFLAGS) $(CDEBFLAGS) $(LIB)
+	$(CC) $^ -o $(BIN)/deb$(TARGET).exe $(CDEFFLAGS) $(CDEBFLAGS) $(LIB)
 
 release: test.c
-	$(CC) $^ -o $(TARGET).exe $(CDEFFLAGS) $(CFLAGS) $(LIB)
+	$(CC) $^ -o $(BIN)/$(TARGET).exe $(CDEFFLAGS) $(CFLAGS) $(LIB)
 
 beau: beautifier.c
-	$(CC) $^ -o beautifier.exe $(CDEFFLAGS) $(CFLAGS) $(LIB)
+	$(CC) $^ -o $(BIN)/cbeautifier.exe $(CDEFFLAGS) $(CFLAGS) $(LIB)
