@@ -34,6 +34,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog
 
+* 1.7
+	* Fix bug with variable shadowing in C version
 * 1.6
 	* Fix C binaries
 * 1.5
