@@ -7,3 +7,4 @@ bin*
 *.zip
 *.exe
 .bash_history
+json.hpp
