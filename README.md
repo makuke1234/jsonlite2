@@ -34,6 +34,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog
 
+* 1.6
+	* Fix C binaries
 * 1.5
 	* Make value dumping more 'beautiful', fix C library linking issues
 	* Make minor optimisations
