@@ -622,6 +622,27 @@ namespace jsonlite2
 				break;
 			}
 		}
+
+		// Find comma
+		for (; it != end; ++it)
+		{
+			switch (*it)
+			{
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				break;
+			case ',':
+				++it;
+				/* fall through */
+			case ']':
+			case '}':
+				return val;
+			default:
+				throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+			}
+		}
 		return val;
 	}
 	inline jsonKeyValue jsonKeyValue::p_parse(const char * & it, const char * end)
