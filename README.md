@@ -34,6 +34,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog
 
+* 1.8.2
+	* Fix linter bug both in C & C++ version
 * 1.8.1
 	* Fix strdup_s & wcsdup_s bug SEG-faulting on NULL string
 * 1.8

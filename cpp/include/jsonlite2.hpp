@@ -1191,11 +1191,15 @@ namespace jsonlite2
 			case '\r':
 				++it;
 				break;
+			case ']':
+				if (vals)
+				{
+					done = true;
+					break;
+				}
+				/* fall through */
 			case '}':
 				err = error::invalidTerminator;
-				break;
-			case ']':
-				done = true;
 				break;
 			default:
 				json::p_checkValue(it, end, err);
