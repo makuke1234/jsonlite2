@@ -34,7 +34,7 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog
 
-* 1.9
+* 1.8.1
 	* Fix strdup_s & wcsdup_s bug SEG-faulting on NULL string
 * 1.8
 	* Fix bug with object value fetching in C version
