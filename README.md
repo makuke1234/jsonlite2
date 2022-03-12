@@ -36,7 +36,7 @@ If you want you can compile the library yourself, just use the `makefile` provid
 # Changelog
 
 * 1.9
-	* Fix usability of C++ version
+	* Improve usability of C++ version
 * 1.8.2
 	* Fix linter bug both in C & C++ version
 * 1.8.1
