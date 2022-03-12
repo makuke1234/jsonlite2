@@ -119,7 +119,7 @@ namespace jsonlite2
 		} m_d;
 		
 		static inline jsonValue p_parse(const char * & it, const char * end);
-		std::string p_dump(std::size_t depth, bool nonobj = false) const;
+		inline std::string p_dump(std::size_t depth, bool nonobj = false) const;
 
 	public:
 		jsonValue() noexcept = default;
@@ -168,7 +168,23 @@ namespace jsonlite2
 			}
 			return *this->m_d.string;
 		}
+		const std::string & getString() const
+		{
+			if (this->m_type != type::string)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return *this->m_d.string;
+		}
 		bool & getBoolean()
+		{
+			if (this->m_type != type::boolean)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return this->m_d.boolean;
+		}
+		const bool & getBoolean() const
 		{
 			if (this->m_type != type::boolean)
 			{
@@ -184,7 +200,23 @@ namespace jsonlite2
 			}
 			return this->m_d.number;
 		}
+		const double & getNumber() const
+		{
+			if (this->m_type != type::number)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return this->m_d.number;
+		}
 		jsonArray & getArray()
+		{
+			if (this->m_type != type::array)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return *this->m_d.array;
+		}
+		const jsonArray & getArray() const
 		{
 			if (this->m_type != type::array)
 			{
@@ -200,6 +232,24 @@ namespace jsonlite2
 			}
 			return *this->m_d.object;
 		}
+		const jsonObject & getObject() const
+		{
+			if (this->m_type != type::object)
+			{
+				throw std::runtime_error("Invalid JSON type!");
+			}
+			return *this->m_d.object;
+		}
+
+		jsonKeyValue & operator[](const std::string & key);
+		const jsonKeyValue & operator[](const std::string & key) const;
+		jsonKeyValue & at(const std::string & key);
+		const jsonKeyValue & at(const std::string & key) const;
+
+		jsonValue & operator[](std::size_t idx);
+		const jsonValue & operator[](std::size_t idx) const;
+		jsonValue & at(std::size_t idx);
+		const jsonValue & at(std::size_t idx) const;
 
 		std::string dump() const
 		{
@@ -216,9 +266,26 @@ namespace jsonlite2
 		std::vector<jsonValue> m_vals;
 
 		static inline jsonArray p_parse(const char * & it, const char * end);
-		std::string p_dump(std::size_t depth) const;
+		inline std::string p_dump(std::size_t depth) const;
 
 	public:
+
+		jsonValue & operator[](std::size_t idx) noexcept
+		{
+			return this->m_vals[idx];
+		}
+		const jsonValue & operator[](std::size_t idx) const noexcept
+		{
+			return this->m_vals[idx];
+		}
+		jsonValue & at(std::size_t idx)
+		{
+			return this->m_vals.at(idx);
+		}
+		const jsonValue & at(std::size_t idx) const
+		{
+			return this->m_vals.at(idx);
+		}
 
 		std::string dump() const
 		{
@@ -237,7 +304,7 @@ namespace jsonlite2
 		bool m_empty{ true };
 
 		static inline jsonKeyValue p_parse(const char * & it, const char * end);
-		std::string p_dump(std::size_t depth) const;
+		inline std::string p_dump(std::size_t depth) const;
 		
 	public:
 		jsonKeyValue() noexcept = default;
@@ -277,6 +344,14 @@ namespace jsonlite2
 			return this->m_value;
 		}
 
+		jsonValue * operator->()
+		{
+			return &this->m_value;
+		}
+		constexpr const jsonValue * operator->() const noexcept
+		{
+			return &this->m_value;
+		}
 
 		std::string dump() const
 		{
@@ -294,7 +369,7 @@ namespace jsonlite2
 		std::unordered_map<std::string, std::size_t> m_map;
 
 		static inline jsonObject p_parse(const char * & it, const char * end);
-		std::string p_dump(std::size_t depth) const;
+		inline std::string p_dump(std::size_t depth) const;
 
 	public:
 
@@ -453,6 +528,40 @@ namespace jsonlite2
 			break;
 		}
 		this->m_type = type::null;
+	}
+
+	inline jsonKeyValue & jsonValue::operator[](const std::string & key)
+	{
+		return this->getObject()[key];
+	}
+	inline const jsonKeyValue & jsonValue::operator[](const std::string & key) const
+	{
+		return this->getObject()[key];
+	}
+	inline jsonKeyValue & jsonValue::at(const std::string & key)
+	{
+		return this->getObject().at(key);
+	}
+	inline const jsonKeyValue & jsonValue::at(const std::string & key) const
+	{
+		return this->getObject().at(key);
+	}
+
+	inline jsonValue & jsonValue::operator[](std::size_t idx)
+	{
+		return this->getArray()[idx];
+	}
+	inline const jsonValue & jsonValue::operator[](std::size_t idx) const
+	{
+		return this->getArray()[idx];
+	}
+	inline jsonValue & jsonValue::at(std::size_t idx)
+	{
+		return this->getArray().at(idx);
+	}
+	inline const jsonValue & jsonValue::at(std::size_t idx) const
+	{
+		return this->getArray().at(idx);
 	}
 
 	// Value parsing
@@ -729,7 +838,7 @@ namespace jsonlite2
 		return obj;
 	}
 
-	std::string jsonArray::p_dump(std::size_t depth) const
+	inline std::string jsonArray::p_dump(std::size_t depth) const
 	{
 		std::string out(depth, '\t');
 		out += "[\n";
@@ -749,7 +858,7 @@ namespace jsonlite2
 
 		return out;
 	}
-	std::string jsonValue::p_dump(std::size_t depth, bool nonobj) const
+	inline std::string jsonValue::p_dump(std::size_t depth, bool nonobj) const
 	{
 		switch (this->m_type)
 		{
@@ -780,7 +889,7 @@ namespace jsonlite2
 			case type::number:
 			{
 				char temp[MAX_NUMBERLEN];
-				auto stringLen = sprintf(temp, "%.15g", this->m_d.number);
+				auto stringLen = sprintf_s(temp, MAX_NUMBERLEN, "%.15g", this->m_d.number);
 				
 				if (stringLen <= 0)
 				{
@@ -796,7 +905,7 @@ namespace jsonlite2
 		}
 		}
 	}
-	std::string jsonKeyValue::p_dump(std::size_t depth) const
+	inline std::string jsonKeyValue::p_dump(std::size_t depth) const
 	{
 		std::string out(depth, '\t');
 		
@@ -818,7 +927,7 @@ namespace jsonlite2
 
 		return out;
 	}
-	std::string jsonObject::p_dump(std::size_t depth) const
+	inline std::string jsonObject::p_dump(std::size_t depth) const
 	{
 		std::string out(depth, '\t');
 		
@@ -942,6 +1051,48 @@ namespace jsonlite2
 			return this->m_value;
 		}
 
+		constexpr const jsonValue * operator->() const noexcept
+		{
+			return &this->m_value;
+		}
+		jsonValue * operator->()
+		{
+			return &this->m_value;
+		}
+
+		jsonKeyValue & operator[](const std::string & key)
+		{
+			return this->get()[key];
+		}
+		const jsonKeyValue & operator[](const std::string & key) const
+		{
+			return this->get()[key];
+		}
+		jsonKeyValue & at(const std::string & key)
+		{
+			return this->get().at(key);
+		}
+		const jsonKeyValue & at(const std::string & key) const
+		{
+			return this->get().at(key);
+		}
+
+		jsonValue & operator[](std::size_t idx)
+		{
+			return this->get()[idx];
+		}
+		const jsonValue & operator[](std::size_t idx) const
+		{
+			return this->get()[idx];
+		}
+		jsonValue & at(std::size_t idx)
+		{
+			return this->get()[idx];
+		}
+		const jsonValue & at(std::size_t idx) const
+		{
+			return this->get()[idx];
+		}
 	};
 
 	// Value checking
