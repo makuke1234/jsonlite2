@@ -8,7 +8,7 @@ TARGET=jsonlite2
 CC=gcc
 CDEFFLAGS=-std=c99 -Wall -Wextra -Wpedantic -Wconversion
 CFLAGS=-O3 -Wl,--strip-all,--build-id=none,--gc-sections -fno-ident -D NDEBUG
-CDEFFLAGS=-g -O0 -D _DEBUG
+CDEBFLAGS=-g -O0 -D _DEBUG
 
 SRCFILES=$(wildcard $(SRC)/*.c)
 
