@@ -21,7 +21,7 @@ ease of use and full compliance with JSON standard.
 
 The C++ version of this library is a single-include header file, C++11 compliant, yet
 again relying on KISS principle. This time I decided not to use custom exceptions,
-also, the linter part of it is almost exception-free.
+also, the linter part of it is exception-free.
 
 
 # Obtaining
@@ -35,6 +35,8 @@ If you want you can compile the library yourself, just use the `makefile` provid
 
 # Changelog
 
+* 2.0
+	* Make C++ version of the library expection-less
 * 1.9
 	* Improve usability of C++ version
 * 1.8.2

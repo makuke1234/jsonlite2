@@ -61,7 +61,10 @@ int main(int argc, char ** argv)
 
 		std::cout << "Contents length: " << contents.length() << " bytes\n";
 
-		test(contents, "jsonlite2", MAX_ITER, jsonlite2::json(), [](const std::string & cont){ return jsonlite2::json::parse(cont); });
+		test(contents, "jsonlite2", MAX_ITER, jsonlite2::json(), [](const std::string & cont){
+			jsonlite2::error err;
+			return jsonlite2::json::parse(cont, err);
+		});
 		test(contents, "nlohmann::json", MAX_ITER, nlohmann::json(), [](const std::string & cont){ return nlohmann::json::parse(cont); });
 
 		std::cout << '\n';

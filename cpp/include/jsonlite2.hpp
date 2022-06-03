@@ -1,12 +1,10 @@
 #pragma once
 
-#include <exception>
 #include <type_traits>
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include <stdexcept>
 
 #include <cstdint>
 #include <cstring>
@@ -118,7 +116,7 @@ namespace jsonlite2
 			jsonObject * object;
 		} m_d;
 		
-		static inline jsonValue p_parse(const char * & it, const char * end);
+		static inline jsonValue p_parse(const char * & it, const char * end, bool & success);
 		inline std::string p_dump(std::size_t depth, bool nonobj = false) const;
 
 	public:
@@ -162,82 +160,52 @@ namespace jsonlite2
 		}
 		std::string & getString()
 		{
-			if (this->m_type != type::string)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::string && "Invalid JSON type!");
 			return *this->m_d.string;
 		}
 		const std::string & getString() const
 		{
-			if (this->m_type != type::string)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::string && "Invalid JSON type!");
 			return *this->m_d.string;
 		}
 		bool & getBoolean()
 		{
-			if (this->m_type != type::boolean)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::boolean && "Invalid JSON type!");
 			return this->m_d.boolean;
 		}
 		const bool & getBoolean() const
 		{
-			if (this->m_type != type::boolean)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::boolean && "Invalid JSON type!");
 			return this->m_d.boolean;
 		}
 		double & getNumber()
 		{
-			if (this->m_type != type::number)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::number && "Invalid JSON type!");
 			return this->m_d.number;
 		}
 		const double & getNumber() const
 		{
-			if (this->m_type != type::number)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::number && "Invalid JSON type!");
 			return this->m_d.number;
 		}
 		jsonArray & getArray()
 		{
-			if (this->m_type != type::array)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::array && "Invalid JSON type!");
 			return *this->m_d.array;
 		}
 		const jsonArray & getArray() const
 		{
-			if (this->m_type != type::array)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::array && "Invalid JSON type!");
 			return *this->m_d.array;
 		}
 		jsonObject & getObject()
 		{
-			if (this->m_type != type::object)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::object && "Invalid JSON type!");
 			return *this->m_d.object;
 		}
 		const jsonObject & getObject() const
 		{
-			if (this->m_type != type::object)
-			{
-				throw std::runtime_error("Invalid JSON type!");
-			}
+			assert(this->m_type == type::object && "Invalid JSON type!");
 			return *this->m_d.object;
 		}
 
@@ -265,7 +233,7 @@ namespace jsonlite2
 
 		std::vector<jsonValue> m_vals;
 
-		static inline jsonArray p_parse(const char * & it, const char * end);
+		static inline jsonArray p_parse(const char * & it, const char * end, bool & success);
 		inline std::string p_dump(std::size_t depth) const;
 
 	public:
@@ -303,7 +271,7 @@ namespace jsonlite2
 		jsonValue m_value;
 		bool m_empty{ true };
 
-		static inline jsonKeyValue p_parse(const char * & it, const char * end);
+		static inline jsonKeyValue p_parse(const char * & it, const char * end, bool & success);
 		inline std::string p_dump(std::size_t depth) const;
 		
 	public:
@@ -368,7 +336,7 @@ namespace jsonlite2
 		std::vector<jsonKeyValue> m_keyvalues;
 		std::unordered_map<std::string, std::size_t> m_map;
 
-		static inline jsonObject p_parse(const char * & it, const char * end);
+		static inline jsonObject p_parse(const char * & it, const char * end, bool & success);
 		inline std::string p_dump(std::size_t depth) const;
 
 	public:
@@ -386,29 +354,20 @@ namespace jsonlite2
 		const jsonKeyValue & operator[](const std::string & key) const
 		{
 			auto it = this->m_map.find(key);
-			if (it == this->m_map.end())
-			{
-				throw std::runtime_error("Invalid JSON key!");
-			}
+			assert(it != this->m_map.end() && "Invalid JSON key!");
 			return this->m_keyvalues[it->second];
 		}
 		jsonKeyValue & at(const std::string & key)
 		{
 			auto it = this->m_map.find(key);
-			if (it == this->m_map.end())
-			{
-				throw std::runtime_error("Invalid JSON key!");
-			}
-			return this->m_keyvalues[it->second];
+			assert(it != this->m_map.end() && "Invalid JSON key!");
+			return this->m_keyvalues.at(it->second);
 		}
 		const jsonKeyValue & at(const std::string & key) const
 		{
 			auto it = this->m_map.find(key);
-			if (it == this->m_map.end())
-			{
-				throw std::runtime_error("Invalid JSON key!");
-			}
-			return this->m_keyvalues[it->second];
+			assert(it != this->m_map.end() && "Invalid JSON key!");
+			return this->m_keyvalues.at(it->second);
 		}
 
 		bool remove(const std::string & key) noexcept
@@ -566,7 +525,7 @@ namespace jsonlite2
 
 	// Value parsing
 
-	inline jsonArray jsonArray::p_parse(const char * & it, const char * end)
+	inline jsonArray jsonArray::p_parse(const char * & it, const char * end, bool & success)
 	{
 		assert(it  != nullptr);
 		assert(end != nullptr);
@@ -597,7 +556,11 @@ namespace jsonlite2
 				++it;
 				break;
 			default:
-				arr.m_vals.emplace_back(jsonValue::p_parse(it, end));
+				arr.m_vals.emplace_back(jsonValue::p_parse(it, end, success));
+				if (!success)
+				{
+					return {};
+				}
 			}
 			if (ended)
 			{
@@ -605,14 +568,11 @@ namespace jsonlite2
 			}
 		}
 
-		if (!ended)
-		{
-			throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
-		}
+		assert(ended && "Unknown error!");
 
 		return arr;
 	}
-	inline jsonValue jsonValue::p_parse(const char * & it, const char * end)
+	inline jsonValue jsonValue::p_parse(const char * & it, const char * end, bool & success)
 	{
 		assert(it  != nullptr);
 		assert(end != nullptr);
@@ -631,12 +591,20 @@ namespace jsonlite2
 				break;
 			case '{':
 				val.m_type = type::object;
-				val.m_d.object = new jsonObject(jsonObject::p_parse(it, end));
+				val.m_d.object = new jsonObject(jsonObject::p_parse(it, end, success));
+				if (!success)
+				{
+					return {};
+				}
 				done = true;
 				break;
 			case '[':
 				val.m_type = type::array;
-				val.m_d.array = new jsonArray(jsonArray::p_parse(it, end));
+				val.m_d.array = new jsonArray(jsonArray::p_parse(it, end, success));
+				if (!success)
+				{
+					return {};
+				}
 				done = true;
 				break;
 			case '"':
@@ -659,7 +627,9 @@ namespace jsonlite2
 				}
 				if (!done)
 				{
-					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+					success = false;
+					assert(!"Unknwon error!");
+					return {};
 				}
 				break;
 			case 'f':
@@ -672,7 +642,9 @@ namespace jsonlite2
 				}
 				else
 				{
-					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+					success = false;
+					assert(!"Unknown error!");
+					return {};
 				}
 				break;
 			case 't':
@@ -685,7 +657,9 @@ namespace jsonlite2
 				}
 				else
 				{
-					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+					success = false;
+					assert(!"Unknown error!");
+					return {};
 				}
 				break;
 			case 'n':
@@ -697,7 +671,9 @@ namespace jsonlite2
 				}
 				else
 				{
-					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+					success = false;
+					assert(!"Unknown error!");
+					return {};
 				}
 				break;
 			default:
@@ -722,7 +698,9 @@ namespace jsonlite2
 				}
 				else
 				{
-					throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+					success = false;
+					assert(!"Unknown error!");
+					return {};
 				}
 			}
 
@@ -749,12 +727,14 @@ namespace jsonlite2
 			case '}':
 				return val;
 			default:
-				throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+				success = false;
+				assert(!"Unknown error!");
+				return {};
 			}
 		}
 		return val;
 	}
-	inline jsonKeyValue jsonKeyValue::p_parse(const char * & it, const char * end)
+	inline jsonKeyValue jsonKeyValue::p_parse(const char * & it, const char * end, bool & success)
 	{
 		assert(it  != nullptr);
 		assert(end != nullptr);
@@ -785,10 +765,11 @@ namespace jsonlite2
 				break;
 			}
 		}
-		kv.m_value = jsonValue::p_parse(it, end);
+		kv.m_value = jsonValue::p_parse(it, end, success);
+		assert(success && "Unknown error!");
 		return kv;
 	}
-	inline jsonObject jsonObject::p_parse(const char * & it, const char * end)
+	inline jsonObject jsonObject::p_parse(const char * & it, const char * end, bool & success)
 	{
 		assert(it  != nullptr);
 		assert(end != nullptr);
@@ -808,7 +789,11 @@ namespace jsonlite2
 			switch (*it)
 			{
 			case '"':
-				obj.m_keyvalues.emplace_back(jsonKeyValue::p_parse(it, end));
+				obj.m_keyvalues.emplace_back(jsonKeyValue::p_parse(it, end, success));
+				if (!success)
+				{
+					return {};
+				}
 				obj.m_map.emplace(obj.m_keyvalues.back().m_key, std::size_t(obj.m_keyvalues.size() - 1));
 				break;
 			case '}':
@@ -822,7 +807,9 @@ namespace jsonlite2
 				++it;
 				break;
 			default:
-				throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+				success = false;
+				assert(!"Unknown error!");
+				return {};
 			}
 
 			if (ended)
@@ -832,7 +819,9 @@ namespace jsonlite2
 		}
 		if (!ended)
 		{
-			throw std::runtime_error(g_jsonErrors[std::uint8_t(error::unknown)]);
+			success = false;
+			assert(!"Unknown error!");
+			return {};
 		}
 
 		return obj;
@@ -893,7 +882,8 @@ namespace jsonlite2
 				
 				if (stringLen <= 0)
 				{
-					throw std::runtime_error("Failed to convert number to string!");
+					assert(!"Number conversion error!");
+					return "Failed to convert number to string!";
 				}
 				out.append(temp, stringLen);
 				
@@ -989,16 +979,25 @@ namespace jsonlite2
 			}
 			return err;
 		}
-		static inline json p_parse(const char * str, std::size_t len)
+		static inline json p_parse(const char * str, std::size_t len, jsonlite2::error & err)
 		{
 			assert(str != nullptr);
 
-			auto err = p_check(str, len);
+			err = p_check(str, len);
 			if (err != error::ok)
 			{
-				throw std::runtime_error(g_jsonErrors[std::uint8_t(err)]);
+				assert(!"Error in json::p_parse!");
+				return {};
 			}
-			return { jsonValue::p_parse(str, str + len) };
+			bool success{ true };
+			auto ret{ jsonValue::p_parse(str, str + len, success) };
+			if (!success)
+			{
+				assert(!"Error in json::p_parse!");
+				err = error::unknown;
+				return {};
+			}
+			return ret;
 		}
 
 	public:
@@ -1015,7 +1014,7 @@ namespace jsonlite2
 			return json::p_check(str.c_str(), str.length());
 		}
 
-		static inline json parse(const char * str, std::size_t len = 0)
+		static inline json parse(const char * str, jsonlite2::error & err, std::size_t len = 0)
 		{
 			// If length not given, calc
 			if (len == 0)
@@ -1023,11 +1022,11 @@ namespace jsonlite2
 				len = std::char_traits<char>::length(str);
 			}
 			// Calling another private recursive function to avoid length-checking
-			return json::p_parse(str, len);
+			return json::p_parse(str, len, err);
 		}
-		static inline json parse(const std::string & str)
+		static inline json parse(const std::string & str, jsonlite2::error & err)
 		{
-			return json::p_parse(str.c_str(), str.length());
+			return json::p_parse(str.c_str(), str.length(), err);
 		}
 		std::string dump() const
 		{
